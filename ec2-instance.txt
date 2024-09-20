@@ -1,0 +1,125 @@
+# Configure the AWS provider
+------------------------------
+provider "aws" {
+  region     = "us-east-1"  # Specify your AWS region
+  }
+
+# Define a security group
+----------------------------
+resource "aws_security_group" "ec2_sg" {
+  name        = "ec2_sg"
+  description = "Allow SSH and HTTP inbound traffic"
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+}
+
+# Define an AWS key pair for SSH access
+-----------------------------------------
+resource "aws_key_pair" "my_keypair" {
+  key_name   = "my_keypair"
+  public_key = file("~/.ssh/id_rsa.pub")  # Replace with your SSH public key file path
+}
+
+# Define an EC2 instance
+-----------------------------
+resource "aws_instance" "example_instance" {
+  ami                    = "ami-0c55b159cbfafe1f0"  # Replace with your desired AMI ID
+  instance_type          = "t2.micro"
+  count                  = 5
+  subnet_id              = aws_subnet.public-subnet.id
+  security_groups        = [aws_security_group.ec2_sg.name]
+  key_name               = aws_key_pair.my_keypair.key_name
+  associate_public_ip_address = true  # Assign a public IP to the instance
+
+  tags = {
+    Name = "ExampleInstance"
+  }
+}
+
+
+to create instance on multiple region
+-------------------------------------
+provider "aws" {
+  region     = "us-east-1"
+  
+}
+
+provider "aws" {
+  alias      = "us-west-2"
+  region     = "us-west-2"
+  
+}
+
+# EC2 instance in us-east-1
+-------------------------------
+resource "aws_instance" "example_instance_us_east_1" {
+  provider              = aws
+  ami                   = "ami-0c55b159cbfafe1f0"  # Replace with your desired AMI ID
+  instance_type         = "t2.micro"
+  associate_public_ip   = true
+
+  tags = {
+    Name = "ExampleInstanceUSEast1"
+  }
+}
+
+# EC2 instance in us-west-2
+---------------------------------
+resource "aws_instance" "example_instance_us_west_2" {
+  provider              = aws.us-west-2
+  ami                   = "ami-0c55b159cbfafe1f0"  # Replace with your desired AMI ID
+  instance_type         = "t2.micro"
+  associate_public_ip   = true
+
+  tags = {
+    Name = "ExampleInstanceUSWest2"
+  }
+}
+
+To stop the ec2-instance
+-------------------------
+# Add a null_resource to stop the instance
+resource "null_resource" "stop_instance" {
+  triggers = {
+    instance_id = aws_instance.example.id
+  }
+
+  # Use local-exec provisioner to run a shell command to stop the instance
+  provisioner "local-exec" {
+    command = <<EOT
+      aws ec2 stop-instances --instance-ids ${aws_instance.example.id} --region ${var.aws_region}
+    EOT
+  }
+}
+
+To stop multiple ec2-instances
+--------------------------------
+# Add a null_resource to stop each instance
+resource "null_resource" "stop_instances" {
+  count = length(aws_instance.example.*.id)  # Stop all instances defined by aws_instance.example
+
+  triggers = {
+    instance_id = aws_instance.example[count.index].id
+  }
+
+  # Use local-exec provisioner to run a shell command to stop the instance
+  provisioner "local-exec" {
+    command = <<EOT
+      aws ec2 stop-instances --instance-ids ${aws_instance.example[count.index].id} --region ${var.aws_region}
+    EOT
+  }
+}
+

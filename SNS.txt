@@ -1,0 +1,25 @@
+TO create SNS with email protocol
+------------------------------------
+
+resource “aws_sns_topic” “sns-topic” {
+  name = “sns-demo-topic”
+}
+
+resource “aws_sns_topic_subscription”  “snstopicsubscription” {
+topic_arn = aws_sns_topic.snstopic.arn
+protocol = “email”
+endpoint = abc@gmail.com # Replace with your email address
+}
+
+
+To create SNS with SMS protocol
+--------------------------------
+resource “aws_sns_topic” “sns-topic” {
+  name = “sns-demo-topic”
+}
+
+resource “aws_sns_topic_subscription”  “snstopicsubscription” {
+topic_arn = aws_sns_topic.snstopic.arn
+protocol = “SMS”
+endpoint = "+91 1234567890" # Replace with your phone number
+}

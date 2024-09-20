@@ -1,0 +1,18 @@
+Commands:
+1.To initialize and to prepare working directory
+-->terraform init
+
+2.To check whether the code is valid or not
+-->terraform validate
+
+3.To list the changes of configuration file
+-->terraform plan
+
+4.To create a resources added in configuration file
+-->terraform apply
+
+5.To delete the previous created resources
+-->terraform destroy
+
+6.To delete specific resources in aws
+-->terraform destroy -target=<resource_type.resource_name>

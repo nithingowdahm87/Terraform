@@ -1,0 +1,124 @@
+To create basic s3-bucket
+-------------------------
+provider "aws" {
+  region = "us-east-1"  # Replace with your desired AWS region
+}
+
+resource "aws_s3_bucket" "example_bucket" {
+  bucket = "example-bucket-name"  # Replace with your desired bucket name
+  acl    = "private"              # Access Control List, default is private
+  
+  versioning {
+    enabled = true  # Enable versioning for the bucket
+  }
+
+  tags = {
+    Name        = "Example Bucket"
+
+  }
+}
+
+To upload objects inside s3 bucket
+------------------------------------
+# Use local-exec to run AWS CLI commands for uploading objects
+resource "null_resource" "upload_objects" {
+  # Example: Upload a file named "example.txt" from local machine to S3 bucket
+  provisioner "local-exec" {
+    command = <<EOT
+      aws s3 cp /path/to/local/file/example.txt s3://${aws_s3_bucket.example_bucket.bucket}/example.txt --region ${var.aws_region}
+    EOT
+  }
+
+  # Trigger this provisioner whenever the S3 bucket resource is created or updated
+  triggers = {
+    bucket_id = aws_s3_bucket.example_bucket.id
+  }
+}
+
+To delete the objects in s3 bucket
+-----------------------------------
+# Use local-exec to run AWS CLI commands for deleting objects
+resource "null_resource" "delete_objects" {
+  # Example: Delete all objects in the S3 bucket
+  provisioner "local-exec" {
+    command = <<EOT
+      aws s3 rm s3://${aws_s3_bucket.example_bucket.bucket} --recursive --region ${var.aws_region}
+    EOT
+  }
+
+  # Trigger this provisioner whenever the S3 bucket resource is created or updated
+  triggers = {
+    bucket_id = aws_s3_bucket.example_bucket.id
+  }
+}
+
+
+
+To create s3 static web hosting and to upload object in it
+------------------------------------------------------------
+
+provider "aws" {
+  region = "us-east-1"  # Replace with your desired AWS region
+}
+
+resource "aws_s3_bucket" "static_website" {
+  bucket = "example-static-website-bucket"  # Replace with your desired bucket name
+  acl    = "public-read"                    # Set ACL to allow public read access
+
+  website {
+    index_document = "index.html"           # Specify the index document for the website
+    error_document = "error.html"           # Specify the error document for the website
+  }
+
+  tags = {
+    Name        = "Example Static Website Bucket"
+    
+  }
+}
+
+# Upload index.html and error.html to the S3 bucket
+resource "aws_s3_bucket_object" "index_html" {
+  bucket = aws_s3_bucket.static_website.bucket
+  key    = "index.html"
+  source = "path/to/local/index.html"  # Replace with the path to your local index.html file
+  acl    = "public-read"              # Set ACL to allow public read access
+}
+
+To create bucket policy for s3 static web hosting
+-----------------------------------------------------
+resource "aws_s3_bucket_policy" "static_website_policy" {
+  bucket = aws_s3_bucket.static_website.bucket
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PublicReadGetObject",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::${aws_s3_bucket.static_website.bucket}/*"
+    }
+  ]
+}
+EOF
+}
+
+
+
+TO create multiple s3 buckets
+-------------------------------
+variable "s3_bucket_names" {
+  type = list
+  default = ["bucket.dev", "bucket.test", "bucket.prod"]
+}
+
+
+resource "aws_s3_bucket" "rough-buckets" {
+  count = length(var.s3_bucket_names)
+  bucket = var.s3_bucket_names[count.index]
+  acl           = "private"
+  force_destroy = true
+}
+
