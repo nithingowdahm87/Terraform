@@ -100,7 +100,7 @@ resource "null_resource" "stop_instance" {
   # Use local-exec provisioner to run a shell command to stop the instance
   provisioner "local-exec" {
     command = <<EOT
-      aws ec2 stop-instances --instance-ids ${aws_instance.example.id} --region ${var.aws_region}
+      aws ec2 stop-instances --instance-ids ${aws_instance.example.id} 
     EOT
   }
 }
@@ -118,7 +118,7 @@ resource "null_resource" "stop_instances" {
   # Use local-exec provisioner to run a shell command to stop the instance
   provisioner "local-exec" {
     command = <<EOT
-      aws ec2 stop-instances --instance-ids ${aws_instance.example[count.index].id} --region ${var.aws_region}
+      aws ec2 stop-instances --instance-ids ${aws_instance.example[count.index].id} 
     EOT
   }
 }
