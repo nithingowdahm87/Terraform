@@ -44,7 +44,7 @@ resource "aws_internet_gateway" "gw" {
   }
 }
 
-To create a public route table and attach public subnet to it
+To create a private route table and attach public subnet to it
 -------------------------------------------------------
 
 resource "aws_route_table" "public_route_table" {
